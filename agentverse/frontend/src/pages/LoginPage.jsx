@@ -1,24 +1,30 @@
 import React, { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login } = useContext(AuthContext);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const { saveSettings } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [provider, setProvider] = useState('groq');
+  const [key, setKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    if (!key.trim()) {
+      return setError('Please enter a valid API Key');
+    }
     setError('');
     setLoading(true);
+    
     try {
-      await login(email, password);
+      saveSettings(provider, key.trim());
+      navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to login');
+      setError('Failed to configure API key');
     } finally {
       setLoading(false);
     }
@@ -35,9 +41,9 @@ export default function LoginPage() {
         
         <div className="text-center mb-10">
           <h1 className="text-4xl font-extrabold mb-3 tracking-tight font-heading">
-            Welcome <span className="text-gradient bg-gradient-to-r from-accent-astrologer to-accent-makeup">Back</span>
+            API <span className="text-gradient bg-gradient-to-r from-accent-astrologer to-accent-makeup">Uplink</span>
           </h1>
-          <p className="text-secondary text-[15px]">Access your decentralized AgentVerse</p>
+          <p className="text-secondary text-[15px]">Configure your secure client keys</p>
         </div>
         
         {error && (
@@ -48,36 +54,37 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2 text-white/70">Email Address</label>
-            <input 
-              type="email" 
-              required
-              className="input w-full p-4 focus:ring-accent-astrologer"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
+            <label className="block text-sm font-medium mb-2 text-white/70">AI Provider</label>
+            <select 
+              className="input w-full p-4 appearance-none bg-black/40 focus:bg-black/60 focus:ring-accent-astrologer" 
+              value={provider} 
+              onChange={(e) => setProvider(e.target.value)}
+            >
+              <option value="groq" className="bg-[#111122]">Groq (Llama 3.1)</option>
+              <option value="gemini" className="bg-[#111122]">Gemini (1.5 Flash)</option>
+            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-white/70">Password</label>
+            <label className="block text-sm font-medium mb-2 text-white/70">API Key</label>
             <div className="relative">
               <input 
-                type={showPassword ? "text" : "password"} 
+                type={showKey ? "text" : "password"} 
                 required
                 className="input w-full p-4 pr-12 focus:ring-accent-astrologer"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder={provider === 'groq' ? "gsk_..." : "AIzaSy..."}
               />
               <button 
                 type="button" 
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowKey(!showKey)}
                 className="absolute right-4 top-4 text-secondary hover:text-white transition-colors"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            <p className="text-[11px] text-secondary mt-2 flex items-center gap-1">🔒 Stored in your local secure browser sandbox only</p>
           </div>
 
           <button 
@@ -85,16 +92,9 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-white text-black font-semibold p-4 rounded-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center shadow-lg disabled:opacity-50"
           >
-            {loading ? <Loader2 className="animate-spin text-black" size={20} /> : 'Uplink Account'}
+            {loading ? <Loader2 className="animate-spin text-black" size={20} /> : 'Connect API'}
           </button>
         </form>
-
-        <p className="text-center mt-8 text-secondary text-sm">
-          New to the verse?{' '}
-          <Link to="/register" className="text-white hover:underline font-medium transition-all">
-            Create an identity
-          </Link>
-        </p>
       </div>
     </div>
   );

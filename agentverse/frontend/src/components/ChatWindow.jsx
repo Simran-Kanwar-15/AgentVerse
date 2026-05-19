@@ -8,13 +8,7 @@ export default function ChatWindow({ messages, agentName, isTyping, navigate, ha
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  if (messages.length === 0 && !isTyping) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-secondary">
-        <p>No messages yet — say hello!</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] max-w-5xl mx-auto p-4 md:p-6 relative">
@@ -33,19 +27,28 @@ export default function ChatWindow({ messages, agentName, isTyping, navigate, ha
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto mb-6 p-6 glass-panel rounded-3xl relative z-10 space-y-6">
-        {messages.map((msg, index) => (
-          <MessageBubble key={index} message={msg} agentName={agentName} />
-        ))}
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className={`glass-panel border-white/5 py-4 px-6 rounded-2xl rounded-tl-sm text-secondary flex items-center space-x-2`}>
-              <div className={`w-2 h-2 bg-accent-${agentName} rounded-full animate-bounce`} style={{ animationDelay: '0ms' }} />
-              <div className={`w-2 h-2 bg-accent-${agentName} rounded-full animate-bounce`} style={{ animationDelay: '150ms' }} />
-              <div className={`w-2 h-2 bg-accent-${agentName} rounded-full animate-bounce`} style={{ animationDelay: '300ms' }} />
+      <div className="flex-1 overflow-y-auto mb-6 p-6 glass-panel rounded-3xl relative z-10 space-y-6 flex flex-col justify-between">
+        <div className="space-y-6 flex-1">
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-secondary/60 text-sm space-y-2 py-10">
+              <span className="text-3xl animate-pulse">🛸</span>
+              <p>Secure uplink established. Start typing below to begin...</p>
             </div>
-          </div>
-        )}
+          ) : (
+            messages.map((msg, index) => (
+              <MessageBubble key={index} message={msg} agentName={agentName} />
+            ))
+          )}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className={`glass-panel border-white/5 py-4 px-6 rounded-2xl rounded-tl-sm text-secondary flex items-center space-x-2`}>
+                <div className={`w-2 h-2 bg-accent-${agentName} rounded-full animate-bounce`} style={{ animationDelay: '0ms' }} />
+                <div className={`w-2 h-2 bg-accent-${agentName} rounded-full animate-bounce`} style={{ animationDelay: '150ms' }} />
+                <div className={`w-2 h-2 bg-accent-${agentName} rounded-full animate-bounce`} style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+        </div>
         <div ref={endRef} />
       </div>
 

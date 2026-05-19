@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function Navbar() {
@@ -25,6 +25,14 @@ export default function Navbar() {
           {activeColor && <span className={`w-2.5 h-2.5 rounded-full ${activeColor} animate-pulse`}></span>}
         </Link>
         <div className="flex items-center gap-4">
+          <Link 
+            to="/login"
+            className="flex items-center gap-2 text-secondary hover:text-white transition-colors text-sm"
+          >
+            <Settings size={18} />
+            <span className="hidden sm:inline-block">Configure Keys</span>
+          </Link>
+          <span className="text-sm text-secondary hidden sm:inline-block">|</span>
           <span className="text-sm text-secondary hidden sm:inline-block">
             Welcome, <span className="text-primary font-medium">{user?.full_name}</span>
           </span>

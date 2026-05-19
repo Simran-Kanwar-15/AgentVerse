@@ -1,52 +1,42 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axiosClient from '../api/axiosClient';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [apiProvider, setApiProvider] = useState('groq');
+  const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
+    const storedProvider = localStorage.getItem('api_provider') || 'groq';
+    const storedKey = localStorage.getItem('api_key') || '';
+    setApiProvider(storedProvider);
+    setApiKey(storedKey);
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const response = await axiosClient.post('/auth/login', { email, password });
-    const { access_token, user: userData } = response.data;
-    setToken(access_token);
-    setUser(userData);
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    return userData;
-  };
-
-  const register = async (formData) => {
-    const response = await axiosClient.post('/auth/register', formData);
-    const { access_token, user: userData } = response.data;
-    setToken(access_token);
-    setUser(userData);
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    return userData;
+  const saveSettings = (provider, key) => {
+    setApiProvider(provider);
+    setApiKey(key);
+    localStorage.setItem('api_provider', provider);
+    localStorage.setItem('api_key', key);
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    setApiKey('');
+    localStorage.removeItem('api_key');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ 
+      apiProvider, 
+      apiKey, 
+      loading, 
+      saveSettings, 
+      logout, 
+      isAuthenticated: !!apiKey,
+      user: { full_name: "Agent Explorer" }
+    }}>
       {children}
     </AuthContext.Provider>
   );
