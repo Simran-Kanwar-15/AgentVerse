@@ -14,7 +14,7 @@ Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("AgentVerse backend running ✓")
+    print("AgentVerse backend running [OK]")
     vector_stores = build_vector_stores(AGENT_DOCS)
     app.state.vector_stores = vector_stores
     yield

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 
-export default function ChatWindow({ messages, agentName, isTyping, navigate, handleClearChat, handleSend, input, setInput, messagesEndRef }) {
+export default function ChatWindow({ messages, agentName, isTyping, navigate, handleClearChat, handleSend, input, setInput, messagesEndRef, onSelectLanguage }) {
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function ChatWindow({ messages, agentName, isTyping, navigate, ha
             </div>
           ) : (
             messages.map((msg, index) => (
-              <MessageBubble key={index} message={msg} agentName={agentName} />
+              <MessageBubble key={index} message={msg} agentName={agentName} onSelectLanguage={onSelectLanguage} />
             ))
           )}
           {isTyping && (

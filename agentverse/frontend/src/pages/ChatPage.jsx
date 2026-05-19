@@ -22,6 +22,9 @@ export default function ChatPage() {
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
   
+  const [pendingMessage, setPendingMessage] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  
   const agent = agentInfo[agentName];
 
   useEffect(() => {
@@ -36,10 +39,16 @@ export default function ChatPage() {
   const fetchHistory = () => {
     try {
       const history = localStorage.getItem(`chat_history_${agentName}`);
+      const savedLang = localStorage.getItem(`chat_lang_${agentName}`);
       if (history) {
         setMessages(JSON.parse(history));
       } else {
         setMessages([]);
+      }
+      if (savedLang) {
+        setSelectedLanguage(savedLang);
+      } else {
+        setSelectedLanguage(null);
       }
     } catch (err) {
       console.error('Failed to load chat history:', err);
@@ -54,25 +63,161 @@ export default function ChatPage() {
     }
   };
 
+  const handleSelectLanguage = async (lang) => {
+    setSelectedLanguage(lang);
+    localStorage.setItem(`chat_lang_${agentName}`, lang);
+
+    // Replace the language selector message in history with a confirmation message
+    const updatedMessages = messages.map(msg => {
+      if (msg.isLanguageSelector) {
+        return {
+          role: 'assistant',
+          content: lang === 'english' ? '🌐 Preferred Language: English' : '🌐 पसंदीदा भाषा: हिंदी',
+          timestamp: new Date().toISOString()
+        };
+      }
+      return msg;
+    });
+
+    setMessages(updatedMessages);
+    saveHistory(updatedMessages);
+    
+    // Now trigger the actual API response for the pendingMessage (or fallback to the last user message)
+    let queryText = pendingMessage;
+    if (!queryText) {
+      const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+      if (lastUserMsg) {
+        queryText = lastUserMsg.content;
+      }
+    }
+
+    if (queryText) {
+      setIsTyping(true);
+      setError('');
+      
+      try {
+        let responseText = '';
+        
+        // Filter out status messages from history for LLM
+        const historyForAPI = updatedMessages.filter(m => !m.content.startsWith('🌐'));
+        
+        const langInstruction = lang === 'hindi' 
+          ? "\n\nCRITICAL: You must answer and interact ENTIRELY in Hindi (using Devanagari script). Keep the tone and style of the agent." 
+          : "\n\nCRITICAL: You must answer and interact ENTIRELY in English. Keep the tone and style of the agent.";
+
+        if (apiProvider === 'groq') {
+          const groqHistory = historyForAPI.slice(-10).map(m => ({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.content
+          }));
+
+          const res = await axios.post(
+            'https://api.groq.com/openai/v1/chat/completions',
+            {
+              model: 'llama-3.1-8b-instant',
+              messages: [
+                { role: 'system', content: AGENT_SYSTEM_PROMPTS[agentName] + langInstruction },
+                ...groqHistory
+              ]
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          responseText = res.data.choices[0].message.content;
+
+        } else if (apiProvider === 'gemini') {
+          const conversationContext = historyForAPI
+            .slice(-10)
+            .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+            .join('\n');
+
+          const promptText = `System Instructions: ${AGENT_SYSTEM_PROMPTS[agentName] + langInstruction}\n\nHere is our conversation history:\n${conversationContext}\n\nAssistant:`;
+
+          const res = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            {
+              contents: [
+                {
+                  parts: [
+                    { text: promptText }
+                  ]
+                }
+              ]
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          responseText = res.data.candidates[0].content.parts[0].text;
+        }
+
+        const aiMsg = { role: 'assistant', content: responseText, timestamp: new Date().toISOString() };
+        const finalMessages = [...updatedMessages, aiMsg];
+        setMessages(finalMessages);
+        saveHistory(finalMessages);
+
+      } catch (err) {
+        console.error('API Error:', err);
+        const errorMsg = err.response?.data?.error?.message || err.message || 'Verification or API Connection Failed';
+        setError(`⚠️ Error: ${errorMsg}`);
+      } finally {
+        setIsTyping(false);
+        setPendingMessage(null);
+      }
+    }
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || isTyping) return;
 
-    const userMsg = { role: 'user', content: input.trim(), timestamp: new Date().toISOString() };
+    const currentInput = input.trim();
+    setInput('');
+
+    // If language is not selected yet, prompt the user
+    if (!selectedLanguage) {
+      const userMsg = { role: 'user', content: currentInput, timestamp: new Date().toISOString() };
+      setPendingMessage(currentInput);
+      
+      const langPromptMsg = {
+        role: 'assistant',
+        content: 'Which language would you prefer for our conversation? / आप बातचीत के लिए कौन सी भाषा पसंद करेंगे?',
+        isLanguageSelector: true,
+        timestamp: new Date().toISOString()
+      };
+      
+      const updatedMessages = [...messages, userMsg, langPromptMsg];
+      setMessages(updatedMessages);
+      saveHistory(updatedMessages);
+      return;
+    }
+
+    const userMsg = { role: 'user', content: currentInput, timestamp: new Date().toISOString() };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     saveHistory(updatedMessages);
     
-    const currentInput = input.trim();
-    setInput('');
     setIsTyping(true);
     setError('');
 
     try {
       let responseText = '';
+      
+      // Filter out status messages from history for LLM
+      const historyForAPI = updatedMessages.filter(m => !m.content.startsWith('🌐'));
+
+      const langInstruction = selectedLanguage === 'hindi' 
+        ? "\n\nCRITICAL: You must answer and interact ENTIRELY in Hindi (using Devanagari script). Keep the tone and style of the agent." 
+        : "\n\nCRITICAL: You must answer and interact ENTIRELY in English. Keep the tone and style of the agent.";
 
       if (apiProvider === 'groq') {
-        const groqHistory = updatedMessages.slice(-10).map(m => ({
+        const groqHistory = historyForAPI.slice(-10).map(m => ({
           role: m.role === 'assistant' ? 'assistant' : 'user',
           content: m.content
         }));
@@ -82,7 +227,7 @@ export default function ChatPage() {
           {
             model: 'llama-3.1-8b-instant',
             messages: [
-              { role: 'system', content: AGENT_SYSTEM_PROMPTS[agentName] },
+              { role: 'system', content: AGENT_SYSTEM_PROMPTS[agentName] + langInstruction },
               ...groqHistory
             ]
           },
@@ -96,12 +241,12 @@ export default function ChatPage() {
         responseText = res.data.choices[0].message.content;
 
       } else if (apiProvider === 'gemini') {
-        const conversationContext = updatedMessages
+        const conversationContext = historyForAPI
           .slice(-10)
           .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
           .join('\n');
 
-        const promptText = `System Instructions: ${AGENT_SYSTEM_PROMPTS[agentName]}\n\nHere is our conversation history:\n${conversationContext}\n\nAssistant:`;
+        const promptText = `System Instructions: ${AGENT_SYSTEM_PROMPTS[agentName] + langInstruction}\n\nHere is our conversation history:\n${conversationContext}\n\nAssistant:`;
 
         const res = await axios.post(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -139,7 +284,10 @@ export default function ChatPage() {
 
   const handleClearChat = () => {
     setMessages([]);
+    setSelectedLanguage(null);
+    setPendingMessage(null);
     localStorage.removeItem(`chat_history_${agentName}`);
+    localStorage.removeItem(`chat_lang_${agentName}`);
   };
 
   if (!agent) return null;
@@ -162,6 +310,7 @@ export default function ChatPage() {
         input={input}
         setInput={setInput}
         messagesEndRef={messagesEndRef}
+        onSelectLanguage={handleSelectLanguage}
       />
     </div>
   );
