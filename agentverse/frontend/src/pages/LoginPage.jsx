@@ -1,18 +1,49 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail, Lock, KeyRound } from 'lucide-react';
 
 export default function LoginPage() {
-  const { saveSettings } = useContext(AuthContext);
+  const { login, saveSettings } = useContext(AuthContext);
   const navigate = useNavigate();
+  
+  // Tabs: 'identity' or 'keyOnly'
+  const [activeTab, setActiveTab] = useState('identity');
+  
+  // Identity Form State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // Key Only Form State
   const [provider, setProvider] = useState('groq');
   const [key, setKey] = useState('');
+  
+  const [showPassword, setShowPassword] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleIdentitySubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      return setError('Please enter your email and password');
+    }
+    setError('');
+    setLoading(true);
+    
+    try {
+      // Simulate auth delay for premium feel
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      login(email.trim(), password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Incorrect credentials');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyOnlySubmit = async (e) => {
     e.preventDefault();
     if (!key.trim()) {
       return setError('Please enter a valid API Key');
@@ -21,10 +52,11 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
+      await new Promise((resolve) => setTimeout(resolve, 600));
       saveSettings(provider, key.trim());
       navigate('/dashboard');
     } catch (err) {
-      setError('Failed to configure API key');
+      setError('Failed to save API settings');
     } finally {
       setLoading(false);
     }
@@ -39,11 +71,41 @@ export default function LoginPage() {
       <div className="glass-panel p-10 w-full max-w-md z-10 rounded-[28px] relative overflow-hidden border border-white/10 shadow-glass">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent-astrologer via-accent-makeup to-accent-finance" />
         
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h1 className="text-4xl font-extrabold mb-3 tracking-tight font-heading">
-            API <span className="text-gradient bg-gradient-to-r from-accent-astrologer to-accent-makeup">Uplink</span>
+            AgentVerse <span className="text-gradient bg-gradient-to-r from-accent-astrologer to-accent-makeup">Uplink</span>
           </h1>
-          <p className="text-secondary text-[15px]">Configure your secure client keys</p>
+          <p className="text-secondary text-[15px]">Connect your secure AI dashboard</p>
+        </div>
+
+        {/* Custom Tab Switcher */}
+        <div className="flex bg-black/40 p-1 rounded-xl mb-6 border border-white/5">
+          <button
+            onClick={() => {
+              setActiveTab('identity');
+              setError('');
+            }}
+            className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all duration-300 ${
+              activeTab === 'identity' 
+                ? 'bg-white/10 text-white shadow-sm' 
+                : 'text-secondary hover:text-white'
+            }`}
+          >
+            Identity Account
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('keyOnly');
+              setError('');
+            }}
+            className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all duration-300 ${
+              activeTab === 'keyOnly' 
+                ? 'bg-white/10 text-white shadow-sm' 
+                : 'text-secondary hover:text-white'
+            }`}
+          >
+            Key-Only Connect
+          </button>
         </div>
         
         {error && (
@@ -52,49 +114,108 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-2 text-white/70">AI Provider</label>
-            <select 
-              className="input w-full p-4 appearance-none bg-black/40 focus:bg-black/60 focus:ring-accent-astrologer" 
-              value={provider} 
-              onChange={(e) => setProvider(e.target.value)}
-            >
-              <option value="groq" className="bg-[#111122]">Groq (Llama 3.1)</option>
-              <option value="gemini" className="bg-[#111122]">Gemini (1.5 Flash)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2 text-white/70">API Key</label>
-            <div className="relative">
-              <input 
-                type={showKey ? "text" : "password"} 
-                required
-                className="input w-full p-4 pr-12 focus:ring-accent-astrologer"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                placeholder={provider === 'groq' ? "gsk_..." : "AIzaSy..."}
-              />
-              <button 
-                type="button" 
-                onClick={() => setShowKey(!showKey)}
-                className="absolute right-4 top-4 text-secondary hover:text-white transition-colors"
-              >
-                {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+        {activeTab === 'identity' ? (
+          /* Identity Account Login Form */
+          <form onSubmit={handleIdentitySubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-white/70">Email Address</label>
+              <div className="relative">
+                <span className="absolute left-4 top-4 text-secondary"><Mail size={18} /></span>
+                <input 
+                  type="email" 
+                  required
+                  className="input w-full p-4 pl-12 focus:ring-accent-astrologer"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
-            <p className="text-[11px] text-secondary mt-2 flex items-center gap-1">🔒 Stored in your local secure browser sandbox only</p>
-          </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-white text-black font-semibold p-4 rounded-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center shadow-lg disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="animate-spin text-black" size={20} /> : 'Connect API'}
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-white/70">Password</label>
+              <div className="relative">
+                <span className="absolute left-4 top-4 text-secondary"><Lock size={18} /></span>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  required
+                  className="input w-full p-4 pl-12 pr-12 focus:ring-accent-astrologer"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-4 text-secondary hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-white text-black font-semibold p-4 rounded-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center shadow-lg disabled:opacity-50 mt-6"
+            >
+              {loading ? <Loader2 className="animate-spin text-black" size={20} /> : 'Access Identity'}
+            </button>
+          </form>
+        ) : (
+          /* Key-Only Connect Form */
+          <form onSubmit={handleKeyOnlySubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-white/70">AI Provider</label>
+              <select 
+                className="input w-full p-4 appearance-none bg-black/40 focus:bg-black/60 focus:ring-accent-astrologer" 
+                value={provider} 
+                onChange={(e) => setProvider(e.target.value)}
+              >
+                <option value="groq" className="bg-[#111122]">Groq (Llama 3.1)</option>
+                <option value="gemini" className="bg-[#111122]">Gemini (1.5 Flash)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-white/70">API Key</label>
+              <div className="relative">
+                <span className="absolute left-4 top-4 text-secondary"><KeyRound size={18} /></span>
+                <input 
+                  type={showKey ? "text" : "password"} 
+                  required
+                  className="input w-full p-4 pl-12 pr-12 focus:ring-accent-astrologer"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  placeholder={provider === 'groq' ? "gsk_..." : "AIzaSy..."}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-4 top-4 text-secondary hover:text-white transition-colors"
+                >
+                  {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <p className="text-[11px] text-secondary mt-2 flex items-center gap-1">🔒 Stored in your local secure browser sandbox only</p>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-white text-black font-semibold p-4 rounded-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center shadow-lg disabled:opacity-50 mt-6"
+            >
+              {loading ? <Loader2 className="animate-spin text-black" size={20} /> : 'Connect API'}
+            </button>
+          </form>
+        )}
+
+        <p className="text-center mt-6 text-secondary text-sm">
+          {activeTab === 'identity' ? "Don't have an identity yet? " : "Want an identity account? "}
+          <Link to="/register" className="text-white hover:underline font-medium transition-all">
+            Create Identity
+          </Link>
+        </p>
       </div>
     </div>
   );

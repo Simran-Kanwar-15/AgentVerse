@@ -26,8 +26,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
+      <Route path="/register" element={<AuthRoute><RegisterPage /></AuthRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/chat/:agentName" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
     </Routes>
