@@ -7,16 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#07070F',
-        surface: 'rgba(20, 20, 35, 0.4)',
-        border: 'rgba(255, 255, 255, 0.08)',
+        background: '#020804',
+        surface: 'rgba(6, 20, 13, 0.45)',
+        border: 'rgba(0, 230, 118, 0.08)',
         primary: '#FFFFFF',
-        secondary: '#A1A1AA',
+        secondary: '#94A3B8',
         accent: {
           astrologer: '#8B5CF6',
-          education: '#10B981',
-          finance: '#F59E0B',
+          education: '#0EA5E9',
+          finance: '#10B981',
           makeup: '#EC4899',
+          green: '#00E676',
         }
       },
       fontFamily: {
@@ -29,9 +30,10 @@ export default {
       },
       boxShadow: {
         'glow-astrologer': '0 0 20px rgba(139, 92, 246, 0.3)',
-        'glow-education': '0 0 20px rgba(16, 185, 129, 0.3)',
-        'glow-finance': '0 0 20px rgba(245, 158, 11, 0.3)',
+        'glow-education': '0 0 20px rgba(14, 165, 233, 0.3)',
+        'glow-finance': '0 0 20px rgba(16, 185, 129, 0.3)',
         'glow-makeup': '0 0 20px rgba(236, 72, 153, 0.3)',
+        'glow-green': '0 0 20px rgba(0, 230, 118, 0.25)',
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
       },
       animation: {

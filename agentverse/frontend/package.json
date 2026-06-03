@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "copy-scanner": "node -e \"const fs = require('fs'); fs.copyFileSync('../../WhatsApp Image 2026-05-30 at 10.46.43.jpeg', './public/scanner.jpeg'); console.log('Scanner copied!');\""
   },
   "dependencies": {
     "axios": "^1.16.1",

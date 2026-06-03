@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-background text-primary font-sans antialiased selection:bg-white/20;
+    @apply bg-background text-primary font-sans antialiased selection:bg-accent-green/20;
     overflow-x: hidden;
   }
   h1, h2, h3, h4, h5, h6 {
@@ -16,32 +16,32 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-surface backdrop-blur-xl border border-border;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    @apply bg-surface backdrop-blur-md border border-border transition-all duration-300;
   }
   
   .input {
-    @apply bg-black/40 border border-white/10 rounded-xl text-primary transition-all duration-300 ease-in-out focus:outline-none focus:border-white/30 focus:bg-black/60 placeholder:text-white/30 backdrop-blur-md;
+    @apply bg-black/40 border border-white/5 rounded-xl text-primary transition-all duration-300 ease-in-out focus:outline-none focus:border-accent-green/30 focus:bg-black/60 focus:shadow-glow-green placeholder:text-white/20 backdrop-blur-md;
   }
   
   .btn-primary {
-    @apply relative overflow-hidden bg-white text-black font-medium py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100;
+    @apply relative overflow-hidden bg-accent-green text-black font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-glow-green active:scale-95 disabled:opacity-50 disabled:hover:scale-100;
   }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 230, 118, 0.1);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 230, 118, 0.25);
 }
 
 .text-gradient {
@@ -49,3 +49,42 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Sidebar Icon Animations on Hover */
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg) scale(1.08); }
+  75% { transform: rotate(8deg) scale(1.08); }
+}
+@keyframes book-flip {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.7) skewY(2deg); }
+}
+@keyframes clock-hand {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes star-grow {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.15) rotate(15deg); }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes grid-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.animate-hover-settings { animation: spin-slow 2.5s linear infinite; }
+.animate-hover-chat { animation: wiggle 0.4s ease-in-out infinite; }
+.animate-hover-book { animation: book-flip 0.7s ease-in-out infinite; }
+.animate-hover-clock { animation: clock-hand 1s linear infinite; }
+.animate-hover-star { animation: star-grow 0.5s ease-in-out infinite; }
+.animate-hover-bot { animation: float-y 0.5s ease-in-out infinite; }
+.animate-hover-dashboard { animation: grid-pulse 0.8s ease-in-out infinite; }
