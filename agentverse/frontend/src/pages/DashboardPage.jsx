@@ -139,7 +139,7 @@ const activities = [
 ];
 
 const DashboardPage = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout, apiProvider, apiKey, saveSettings } = useContext(AuthContext);
   const navigate = useNavigate();
   const [searchVal, setSearchVal] = useState('');
   
@@ -148,6 +148,15 @@ const DashboardPage = () => {
   const [transactionId, setTransactionId] = useState('');
   const [verificationStatus, setVerificationStatus] = useState('idle');
   const [toastMessage, setToastMessage] = useState('');
+
+  // Settings State
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsProvider, setSettingsProvider] = useState(apiProvider || 'groq');
+  const [settingsKey, setSettingsKey] = useState(apiKey || '');
+  const [showSettingsKey, setShowSettingsKey] = useState(false);
+  
+  // Profile dropdown state
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Extract initials
   const initials = user?.full_name 
@@ -159,6 +168,29 @@ const DashboardPage = () => {
     setTimeout(() => {
       setToastMessage('');
     }, 4000);
+  };
+
+  const handleMenuClick = (label) => {
+    if (label === 'Settings') {
+      setSettingsProvider(apiProvider || 'groq');
+      setSettingsKey(apiKey || '');
+      setIsSettingsModalOpen(true);
+    } else if (label === 'Dashboard') {
+      // already here
+    } else {
+      showToast(`📁 ${label} section initialized!`);
+    }
+  };
+
+  const handleSaveSettings = (e) => {
+    e.preventDefault();
+    if (!settingsKey.trim()) {
+      showToast('⚠️ Please enter a valid API Key');
+      return;
+    }
+    saveSettings(settingsProvider, settingsKey.trim());
+    setIsSettingsModalOpen(false);
+    showToast('⚙️ Connection settings updated successfully!');
   };
 
   const handleQuickAction = (label) => {
@@ -296,9 +328,47 @@ const DashboardPage = () => {
               </button>
               
               {/* User Avatar Circle */}
-              <button className="w-10 h-10 rounded-full bg-accent-green/10 border border-accent-green/30 flex items-center justify-center font-bold text-accent-green hover:shadow-glow-green transition-all">
-                {initials}
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  className="w-10 h-10 rounded-full bg-accent-green/10 border border-accent-green/30 flex items-center justify-center font-bold text-accent-green hover:shadow-glow-green transition-all"
+                >
+                  {initials}
+                </button>
+                
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 mt-2.5 w-56 glass-panel p-3.5 rounded-2xl border border-border shadow-2xl z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+                    <div className="px-2 pb-2.5 border-b border-white/5 mb-2.5">
+                      <p className="text-xs font-bold text-white leading-tight">{user?.full_name || 'Simran Kanwar'}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{user?.email || 'explorer@agentverse.ai'}</p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        setSettingsProvider(apiProvider || 'groq');
+                        setSettingsKey(apiKey || '');
+                        setIsSettingsModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all"
+                    >
+                      <Settings size={14} />
+                      <span>Configure Keys</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        logout();
+                        navigate('/login');
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all mt-1"
+                    >
+                      <span>🚪</span>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 
@@ -601,6 +671,76 @@ const DashboardPage = () => {
         <div className="fixed bottom-6 right-6 z-50 bg-[#05180f] border border-accent-green/30 text-white text-xs font-medium px-5 py-3.5 rounded-2xl shadow-glow-green flex items-center gap-2 animate-in slide-in-from-bottom-5 duration-300">
           <span>🔔</span>
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {isSettingsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <form 
+            onSubmit={handleSaveSettings}
+            className="glass-panel p-6 rounded-[28px] border border-accent-green/20 max-w-sm w-full relative overflow-hidden shadow-2xl space-y-5 animate-in zoom-in-95 duration-200"
+          >
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent-green via-emerald-500 to-green-600" />
+            
+            <div className="text-center">
+              <h3 className="text-lg font-bold font-heading text-white">API Connection Settings</h3>
+              <p className="text-xs text-slate-400 mt-1">Configure your secure keys for AI agents</p>
+            </div>
+
+            {/* Provider Selector */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider uppercase block">AI Provider</label>
+              <select 
+                value={settingsProvider} 
+                onChange={(e) => setSettingsProvider(e.target.value)}
+                className="input w-full p-3.5 appearance-none bg-black/60 focus:bg-black/80 border border-white/5 text-xs text-white"
+              >
+                <option value="groq" className="bg-[#020804]">Groq (Llama 3.1)</option>
+                <option value="gemini" className="bg-[#020804]">Gemini (1.5 Flash)</option>
+              </select>
+            </div>
+
+            {/* API Key Input */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider uppercase block">API Key</label>
+              <div className="relative flex items-center">
+                <input 
+                  type={showSettingsKey ? "text" : "password"} 
+                  value={settingsKey}
+                  onChange={(e) => setSettingsKey(e.target.value)}
+                  placeholder={settingsProvider === 'groq' ? "gsk_..." : "AIzaSy..."} 
+                  className="input w-full pl-4.5 pr-12 py-3.5 text-xs"
+                  required
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowSettingsKey(!showSettingsKey)}
+                  className="absolute right-4 text-slate-400 hover:text-white transition-colors text-xs"
+                >
+                  {showSettingsKey ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500">🔒 Keys are stored locally in your secure sandbox.</p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button 
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold py-2.5 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                className="flex-1 bg-accent-green hover:bg-emerald-400 text-black text-xs font-bold py-2.5 rounded-xl transition-all shadow-glow-green"
+              >
+                Save Settings
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
